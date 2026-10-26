@@ -1779,7 +1779,7 @@ body{min-height:100svh}
  let openingTimer, languageTimer, statusKey=null, returnFocus=null;
  const t=key=>phrases[state.language || 'pt'][key];
  function announce(key){statusKey=key;status.textContent=key?t(key):'';}
- const SONG_LOOP_END=102;
+ const SONG_LOOP_START=10, SONG_LOOP_END=102;
  let songLoopTimer, songHasStarted=false;
  song.volume=.4;
  function updateSoundControl(){
@@ -1792,14 +1792,14 @@ body{min-height:100svh}
   });
  }
  function playSong(){
-  if(song.currentTime>=SONG_LOOP_END)song.currentTime=0;
+  if(song.currentTime<SONG_LOOP_START || song.currentTime>=SONG_LOOP_END)song.currentTime=SONG_LOOP_START;
   const playback=song.play();
   if(playback)playback.catch(()=>updateSoundControl());
  }
  function scheduleSongLoop(){
   clearTimeout(songLoopTimer);
   if(song.paused || song.ended || song.readyState<2)return;
-  if(song.currentTime>=SONG_LOOP_END)song.currentTime=0;
+  if(song.currentTime<SONG_LOOP_START || song.currentTime>=SONG_LOOP_END)song.currentTime=SONG_LOOP_START;
   const remaining=(SONG_LOOP_END-song.currentTime)/song.playbackRate;
   songLoopTimer=setTimeout(scheduleSongLoop,Math.max(20,remaining*1000));
  }
