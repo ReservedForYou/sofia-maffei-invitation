@@ -1613,7 +1613,7 @@ body{min-height:100svh}
 @media(prefers-reduced-motion:reduce) { #sofia-preview *,#sofia-preview *::before,#sofia-preview *::after {transition:none!important;animation:none!important;} }
 </style>
 <div id="sofia-preview">
- <audio id="sofia-song" src="./summertime-sadness.mp3" preload="metadata" loop></audio>
+ <audio id="sofia-song" src="./summertime-sadness.mp3" preload="auto" loop></audio>
  <div class="preview-surround">
   <div class="invitation" lang="pt-BR">
    <div class="invitation-content" inert>
@@ -1631,6 +1631,7 @@ body{min-height:100svh}
     <p class="eyebrow">Toque no selo para abrir</p>
     <p class="date-line">15 FEVEREIRO 2027 · 18H–22H</p>
     <button type="button" class="cover-language cursor-interaction" data-action="language" aria-label="Mudar idioma">PT / EN</button>
+    <button type="button" class="sound-control cursor-interaction" data-action="sound" aria-pressed="false">Ouvir música</button>
    </section>
    <div class="opened" hidden>
     <header class="topbar"><div class="monogram">SM<small>XV ANOS</small></div><button type="button" class="icon-button language-switch cursor-interaction" data-action="language" aria-label="Mudar idioma"><span data-language-label aria-hidden="true">🇧🇷</span></button><button type="button" class="icon-button cursor-interaction" data-action="share" aria-label="Compartilhar convite"><i data-lucide="share-2" aria-hidden="true"></i></button></header>
@@ -1676,6 +1677,7 @@ body{min-height:100svh}
      <h2 id="sofia-language-title">Choose your<span>Idioma / Language</span></h2>
      <button type="button" class="language-choice cursor-interaction" data-language="pt" aria-pressed="false">Portuguese <span aria-hidden="true">🇧🇷</span></button>
      <button type="button" class="language-choice cursor-interaction" data-language="en" aria-pressed="false">English <span aria-hidden="true">🇬🇧</span></button>
+     <button type="button" class="sound-control cursor-interaction" data-action="sound" aria-pressed="false">Ouvir música / Play music</button>
     </section>
    </div>
   </div>
@@ -1690,7 +1692,7 @@ body{min-height:100svh}
  const form = root.querySelector('#sofia-rsvp-form');
  const status = root.querySelector('#sofia-status');
  const song=root.querySelector('#sofia-song');
- const soundControl=root.querySelector('[data-action="sound"]');
+ const soundControls=Array.from(root.querySelectorAll('[data-action="sound"]'));
  const overlay=root.querySelector('.language-overlay');
  const languageDialog=root.querySelector('.language-dialog');
  const content=root.querySelector('.invitation-content');
@@ -1777,19 +1779,47 @@ body{min-height:100svh}
  let openingTimer, languageTimer, statusKey=null, returnFocus=null;
  const t=key=>phrases[state.language || 'pt'][key];
  function announce(key){statusKey=key;status.textContent=key?t(key):'';}
+ const SONG_LOOP_END=102;
+ let songLoopTimer, songHasStarted=false;
  song.volume=.4;
  function updateSoundControl(){
   const playing=!song.paused;
-  soundControl.textContent=state.language==='en'?(playing?'Pause music':'Play music'):(playing?'Pausar música':'Ouvir música');
-  soundControl.setAttribute('aria-pressed',String(playing));
+  const pt=playing?'Pausar música':'Ouvir música';
+  const en=playing?'Pause music':'Play music';
+  soundControls.forEach(button=>{
+   button.textContent=state.language===null?`${pt} / ${en}`:state.language==='en'?en:pt;
+   button.setAttribute('aria-pressed',String(playing));
+  });
  }
  function playSong(){
+  if(song.currentTime>=SONG_LOOP_END)song.currentTime=0;
   const playback=song.play();
   if(playback)playback.catch(()=>updateSoundControl());
  }
- song.addEventListener('play',updateSoundControl);
- song.addEventListener('pause',updateSoundControl);
+ function scheduleSongLoop(){
+  clearTimeout(songLoopTimer);
+  if(song.paused || song.ended || song.readyState<2)return;
+  if(song.currentTime>=SONG_LOOP_END)song.currentTime=0;
+  const remaining=(SONG_LOOP_END-song.currentTime)/song.playbackRate;
+  songLoopTimer=setTimeout(scheduleSongLoop,Math.max(20,remaining*1000));
+ }
+ function startSongOnInteraction(event){
+  if(songHasStarted || event.target.closest?.('[data-action="sound"]'))return;
+  if(event.type==='keydown' && !['Enter',' '].includes(event.key))return;
+  playSong();
+ }
+ document.addEventListener('click',startSongOnInteraction,true);
+ document.addEventListener('keydown',startSongOnInteraction,true);
+ song.addEventListener('play',()=>{
+  songHasStarted=true;
+  document.removeEventListener('click',startSongOnInteraction,true);
+  document.removeEventListener('keydown',startSongOnInteraction,true);
+  updateSoundControl();
+ });
+ ['playing','timeupdate','seeked','ratechange'].forEach(event=>song.addEventListener(event,scheduleSongLoop));
+ song.addEventListener('pause',()=>{clearTimeout(songLoopTimer);updateSoundControl();});
  song.addEventListener('error',updateSoundControl);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleSongLoop();});
  function renderRsvpMessage(){
   const name=form.elements.guest.value.trim(),count=Number(form.elements.guests.value),yes=form.elements.attendance.value==='yes';
   let message;
@@ -1870,7 +1900,6 @@ body{min-height:100svh}
    if(!state.language){openLanguageDialog();return;}
    if(seal.disabled || state.opened)return;
    seal.disabled=true;
-   playSong();
    const finishOpening=()=>{
     if(state.opened)return;
     clearTimeout(openingTimer);cover.removeEventListener('animationend',onOpeningEnd);
@@ -1905,12 +1934,13 @@ body{min-height:100svh}
  overlay.addEventListener('keydown',event=>{
   if(event.key==='Escape' && state.language){event.preventDefault();closeLanguageDialog();return;}
   if(event.key==='Tab'){
-   const first=languageChoices[0],last=languageChoices[1];
+   const first=languageChoices[0],last=languageDialog.querySelector('[data-action="sound"]');
    if(event.shiftKey && [languageDialog,first].includes(document.activeElement)){event.preventDefault();last.focus();}
    else if(!event.shiftKey && [languageDialog,last].includes(document.activeElement)){event.preventDefault();first.focus();}
   }
  });
  window.addEventListener('pagehide',()=>song.pause());
+ playSong();
 })();
 </script>
 
