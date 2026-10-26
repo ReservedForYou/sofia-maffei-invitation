@@ -1548,7 +1548,6 @@ body{min-height:100svh}
 #sofia-preview .monogram { font-family:'Cormorant Garamond',Georgia,serif; color:var(--gold); font-size:25px; margin-right:auto; }
 #sofia-preview .monogram small { font-family:Montserrat,Arial,sans-serif; font-size:8px; letter-spacing:2px; padding-left:10px; margin-left:9px; border-left:1px solid var(--line); vertical-align:middle; }
 #sofia-preview .icon-button { width:39px; height:39px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:50%; background:#370b16; color:var(--gold); }
-#sofia-preview .icon-button[aria-pressed=true] { background:var(--gold); color:var(--deep); }
 #sofia-preview .icon-button svg { width:16px; height:16px; }
 #sofia-preview .tabs { display:flex; gap:6px; margin:0 20px; border-bottom:1px solid #80513e88; }
 #sofia-preview .tabs button { flex:1; padding:15px 4px 12px; font-size:11px; background:transparent; color:#dabfb5; border:0; border-bottom:2px solid transparent; }
@@ -1632,7 +1631,7 @@ body{min-height:100svh}
     <button type="button" class="cover-language cursor-interaction" data-action="language" aria-label="Mudar idioma">PT / EN</button>
    </section>
    <div class="opened" hidden>
-    <header class="topbar"><div class="monogram">SM<small>XV ANOS</small></div><button type="button" class="icon-button language-switch cursor-interaction" data-action="language" aria-label="Mudar idioma"><span data-language-label aria-hidden="true">🇧🇷</span></button><button type="button" class="icon-button cursor-interaction" data-action="music" aria-label="Ouvir música" aria-pressed="false"><i data-lucide="music-2" aria-hidden="true"></i></button><button type="button" class="icon-button cursor-interaction" data-action="share" aria-label="Compartilhar convite"><i data-lucide="share-2" aria-hidden="true"></i></button></header>
+    <header class="topbar"><div class="monogram">SM<small>XV ANOS</small></div><button type="button" class="icon-button language-switch cursor-interaction" data-action="language" aria-label="Mudar idioma"><span data-language-label aria-hidden="true">🇧🇷</span></button><button type="button" class="icon-button cursor-interaction" data-action="share" aria-label="Compartilhar convite"><i data-lucide="share-2" aria-hidden="true"></i></button></header>
     <nav class="tabs" role="tablist" aria-label="Explorar o convite">
      <button class="cursor-interaction" id="sofia-tab-invite" type="button" role="tab" data-tab="invite" aria-selected="true" aria-controls="sofia-panel-invite">Convite</button>
      <button class="cursor-interaction" id="sofia-tab-details" type="button" role="tab" data-tab="details" aria-selected="false" aria-controls="sofia-panel-details">Detalhes</button>
@@ -1687,7 +1686,6 @@ body{min-height:100svh}
  const seal = root.querySelector('[data-action="open"]');
  const form = root.querySelector('#sofia-rsvp-form');
  const status = root.querySelector('#sofia-status');
- const musicButton = root.querySelector('[data-action="music"]');
  const overlay=root.querySelector('.language-overlay');
  const content=root.querySelector('.invitation-content');
  const languageChoices=Array.from(root.querySelectorAll('[data-language]'));
@@ -1766,11 +1764,11 @@ body{min-height:100svh}
   });
  });
  const phrases={
-  pt:{musicPlay:'Ouvir música',musicPause:'Pausar música',paused:'Música pausada.',playing:'Tocando uma breve melodia.',ended:'Melodia concluída. Toque para ouvir novamente.',unavailable:'O som não está disponível neste navegador. Os demais controles continuam funcionando.',nameRequired:'Digite seu nome ou o nome da família.',prepared:'Resposta preparada. Envie pelo WhatsApp para confirmar.',copied:'Link copiado.',copyManual:'Selecione e copie o link do convite acima.'},
-  en:{musicPlay:'Play music',musicPause:'Pause music',paused:'Music paused.',playing:'Playing a short melody.',ended:'The melody has finished. Tap to listen again.',unavailable:'Audio is unavailable in this browser. The other controls still work.',nameRequired:'Enter your name or family name.',prepared:'Reply prepared. Send it through WhatsApp to confirm.',copied:'Link copied.',copyManual:'Select and copy the invitation link above.'}
+  pt:{nameRequired:'Digite seu nome ou o nome da família.',prepared:'Resposta preparada. Envie pelo WhatsApp para confirmar.',copied:'Link copiado.',copyManual:'Selecione e copie o link do convite acima.'},
+  en:{nameRequired:'Enter your name or family name.',prepared:'Reply prepared. Send it through WhatsApp to confirm.',copied:'Link copied.',copyManual:'Select and copy the invitation link above.'}
  };
  let state = { opened:false, tab:'invite',language:null };
- let openingTimer, languageTimer, audioContext, musicTimer, musicPlaying=false, statusKey=null, returnFocus=null;
+ let openingTimer, languageTimer, statusKey=null, returnFocus=null;
  const t=key=>phrases[state.language || 'pt'][key];
  function announce(key){statusKey=key;status.textContent=key?t(key):'';}
  function renderRsvpMessage(){
@@ -1797,7 +1795,6 @@ body{min-height:100svh}
   root.lang=language==='en'?'en-GB':'pt-BR';root.querySelector('.invitation').lang=root.lang;document.documentElement.lang=root.lang;
   root.querySelector('[data-language-label]').textContent=language==='en'?'🇬🇧':'🇧🇷';
   languageChoices.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.language===state.language)));
-  musicButton.setAttribute('aria-label',t(musicPlaying?'musicPause':'musicPlay'));
   form.elements.guest.setCustomValidity('');
   if(root.querySelector('#sofia-message').textContent)renderRsvpMessage();
   if(statusKey)status.textContent=t(statusKey);
@@ -1842,30 +1839,6 @@ body{min-height:100svh}
   }
   await copyInvitationLink();
  }
- function stopMusic() {
-  clearTimeout(musicTimer); musicPlaying=false;
-  if(audioContext) {audioContext.close().catch(()=>{});audioContext=null;}
-  musicButton.setAttribute('aria-pressed','false');musicButton.setAttribute('aria-label',t('musicPlay'));
- }
- async function startMusic() {
-  if(musicPlaying){stopMusic();announce('paused');return;}
-  try {
-   const AC=window.AudioContext || window.webkitAudioContext;
-   if(!AC) throw new Error('Audio unavailable');
-   audioContext=new AC(); await audioContext.resume();
-   musicPlaying=true;musicButton.setAttribute('aria-pressed','true');musicButton.setAttribute('aria-label',t('musicPause'));
-   announce('playing');
-   const notes=[261.63,329.63,392,523.25,493.88,392,329.63,293.66,349.23,440,523.25,587.33,523.25,440,349.23,329.63,392,493.88,659.25,587.33,523.25,392,329.63,261.63];
-   const start=audioContext.currentTime+.05;
-   notes.forEach((freq,i)=>{
-    const osc=audioContext.createOscillator(), gain=audioContext.createGain();
-    osc.type='sine';osc.frequency.value=freq;
-    const t=start+i*.48;gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(.07,t+.025);gain.gain.exponentialRampToValueAtTime(.001,t+1.6);
-    osc.connect(gain);gain.connect(audioContext.destination);osc.start(t);osc.stop(t+1.65);
-   });
-   musicTimer=setTimeout(()=>{stopMusic();announce('ended');},(notes.length*.48+1.7)*1000);
-  } catch(error) {stopMusic();announce('unavailable');}
- }
  root.addEventListener('click',event=>{
   const button=event.target.closest('button'); if(!button || !root.contains(button))return;
   if(button.dataset.language){
@@ -1891,8 +1864,7 @@ body{min-height:100svh}
    cover.classList.add('opening');
    openingTimer=setTimeout(finishOpening,2400);
   } else if(action==='language') {openLanguageDialog();
-  } else if(action==='music') {startMusic();}
-  else if(action==='preview-rsvp') {previewRsvp();}
+  } else if(action==='preview-rsvp') {previewRsvp();}
   else if(action==='share-device') {shareInvitation();}
   else if(action==='copy-link') {copyInvitationLink();}
   else if(['invite','details','rsvp','share'].includes(action)) {setPanel(action);if(action==='rsvp') form.elements.guest.focus();}
@@ -1916,8 +1888,6 @@ body{min-height:100svh}
    else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first.focus();}
   }
  });
- document.addEventListener('visibilitychange',()=>{if(document.hidden && musicPlaying)stopMusic();});
- window.addEventListener('pagehide',stopMusic);
 })();
 </script>
 
