@@ -1579,9 +1579,12 @@ body{min-height:100svh}
 #sofia-preview .panel h2 { font-size:38px; line-height:1.08; margin:6px 0 17px; }
 #sofia-preview .panel .intro { font-size:19px; line-height:1.4; margin:0 0 22px; color:#e6c6c0; }
 #sofia-preview .detail-box { padding:22px 17px; margin:15px 0; border:1px solid #88553f; background:#400e1c; box-shadow:inset 0 0 0 4px #400e1c,inset 0 0 0 5px #80513e55; }
+#sofia-preview .venue-link { display:block; color:inherit; text-decoration:none; cursor:pointer; transition:background .2s ease,border-color .2s ease; }
+#sofia-preview .venue-link:hover,#sofia-preview .venue-link:focus-visible { background:#4b1422; border-color:var(--gold); }
+#sofia-preview .venue-link-label { display:block; margin-top:16px; color:var(--gold); font-size:10px; letter-spacing:1px; text-transform:uppercase; }
 #sofia-preview .detail-box svg { width:23px; height:23px; color:var(--gold); margin:0 auto 11px; }
 #sofia-preview .detail-box h3 { font-size:27px; line-height:1.15; margin:0 0 8px; font-weight:400; }
-#sofia-preview .detail-box p:last-child { font-size:16px; margin:0; }
+#sofia-preview .detail-box .detail-value { font-size:16px; margin:0; }
 #sofia-preview .form-field { display:block; text-align:left; margin:18px 0; }
 #sofia-preview .form-field span { display:block; font-size:11px; margin-bottom:8px; color:#f1d3c9; }
 #sofia-preview .field-help { display:block; margin-top:8px; color:#d5b3aa; font-size:12px; line-height:1.6; }
@@ -1642,8 +1645,8 @@ body{min-height:100svh}
     </section>
     <section class="panel" id="sofia-panel-details" role="tabpanel" aria-labelledby="sofia-tab-details" data-panel="details" hidden>
      <p class="eyebrow">Marque esse momento</p><h2 class="serif">Os detalhes<br>da celebração</h2>
-     <div class="detail-box"><i data-lucide="calendar-days" aria-hidden="true"></i><p class="eyebrow">Data e horário</p><h3 class="serif">15 de fevereiro de 2027</h3><p class="serif">Segunda-feira, das 18h às 22h</p></div>
-     <div class="detail-box"><i data-lucide="map-pin" aria-hidden="true"></i><p class="eyebrow">Local da festa</p><h3 class="serif">TaB Centre Plus<br>Community Centre</h3><p class="serif">Palmerston Rd,<br>London N22 8RA</p></div>
+     <div class="detail-box"><i data-lucide="calendar-days" aria-hidden="true"></i><p class="eyebrow">Data e horário</p><h3 class="serif">15 de fevereiro de 2027</h3><p class="serif detail-value">Segunda-feira, das 18h às 22h</p></div>
+     <a class="detail-box venue-link" href="https://share.google/C9kSJRlohjuJpRCMN" target="_blank" rel="noopener noreferrer"><i data-lucide="map-pin" aria-hidden="true"></i><p class="eyebrow">Local da festa</p><h3 class="serif">TaB Centre Plus<br>Community Centre</h3><p class="serif detail-value">Palmerston Rd,<br>London N22 8RA</p><span class="venue-link-label">Ver localização <span aria-hidden="true">↗</span></span></a>
      <button type="button" class="gold-button cursor-interaction" data-action="rsvp">Quero celebrar com você <i data-lucide="heart" aria-hidden="true"></i></button>
     </section>
     <section class="panel" id="sofia-panel-rsvp" role="tabpanel" aria-labelledby="sofia-tab-rsvp" data-panel="rsvp" hidden>
@@ -1714,10 +1717,11 @@ body{min-height:100svh}
   ['[data-panel="details"] > h2','The celebration<br>details'],
   ['.detail-box .eyebrow','Date & time','html',0],
   ['.detail-box h3','15 February 2027','html',0],
-  ['.detail-box p:last-child','Monday from 6 pm to 10 pm','html',0],
+  ['.detail-box .detail-value','Monday from 6 pm to 10 pm','html',0],
   ['.detail-box .eyebrow','The venue','html',1],
   ['.detail-box h3','TaB Centre Plus<br>Community Centre','html',1],
-  ['.detail-box p:last-child','Palmerston Rd,<br>London N22 8RA','html',1],
+  ['.venue-link-label','View location <span aria-hidden="true">↗</span>'],
+  ['.detail-box .detail-value','Palmerston Rd,<br>London N22 8RA','html',1],
   ['[data-panel="details"] [data-action="rsvp"]',"I’d love to celebrate with you ",'first'],
   ['[data-panel="rsvp"] > .eyebrow','Your presence means so much'],
   ['[data-panel="rsvp"] > h2','Let’s make beautiful<br>memories together.'],
