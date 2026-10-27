@@ -1613,7 +1613,7 @@ body{min-height:100svh}
 @media(prefers-reduced-motion:reduce) { #sofia-preview *,#sofia-preview *::before,#sofia-preview *::after {transition:none!important;animation:none!important;} }
 </style>
 <div id="sofia-preview">
- <audio id="sofia-song" src="./summertime-sadness.mp3" preload="auto" loop></audio>
+ <audio id="sofia-song" src="./summertime-sadness-10s-102s.mp3" preload="auto" loop></audio>
  <div class="preview-surround">
   <div class="invitation" lang="pt-BR">
    <div class="invitation-content" inert>
@@ -1779,8 +1779,8 @@ body{min-height:100svh}
  let openingTimer, languageTimer, statusKey=null, returnFocus=null;
  const t=key=>phrases[state.language || 'pt'][key];
  function announce(key){statusKey=key;status.textContent=key?t(key):'';}
- const SONG_LOOP_START=10, SONG_LOOP_END=102;
- let songLoopTimer, songHasStarted=false;
+ // This audio file contains only 0:10–1:42 of the original song; native looping repeats that excerpt.
+ let songHasStarted=false;
  song.volume=.4;
  function updateSoundControl(){
   const playing=!song.paused;
@@ -1792,16 +1792,8 @@ body{min-height:100svh}
   });
  }
  function playSong(){
-  if(song.currentTime<SONG_LOOP_START || song.currentTime>=SONG_LOOP_END)song.currentTime=SONG_LOOP_START;
   const playback=song.play();
   if(playback)playback.catch(()=>updateSoundControl());
- }
- function scheduleSongLoop(){
-  clearTimeout(songLoopTimer);
-  if(song.paused || song.ended || song.readyState<2)return;
-  if(song.currentTime<SONG_LOOP_START || song.currentTime>=SONG_LOOP_END)song.currentTime=SONG_LOOP_START;
-  const remaining=(SONG_LOOP_END-song.currentTime)/song.playbackRate;
-  songLoopTimer=setTimeout(scheduleSongLoop,Math.max(20,remaining*1000));
  }
  function startSongOnInteraction(event){
   if(songHasStarted || event.target.closest?.('[data-action="sound"]'))return;
@@ -1816,10 +1808,8 @@ body{min-height:100svh}
   document.removeEventListener('keydown',startSongOnInteraction,true);
   updateSoundControl();
  });
- ['playing','timeupdate','seeked','ratechange'].forEach(event=>song.addEventListener(event,scheduleSongLoop));
- song.addEventListener('pause',()=>{clearTimeout(songLoopTimer);updateSoundControl();});
+ song.addEventListener('pause',updateSoundControl);
  song.addEventListener('error',updateSoundControl);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleSongLoop();});
  function renderRsvpMessage(){
   const name=form.elements.guest.value.trim(),count=Number(form.elements.guests.value),yes=form.elements.attendance.value==='yes';
   let message;
